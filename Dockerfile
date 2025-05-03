@@ -1,27 +1,29 @@
+# Stage 1: install dependencies into a virtual environment
+FROM python:3.10-slim AS builder
 
-FROM python:3.10 as requirements-stage
+WORKDIR /app
 
-WORKDIR /tmp
+# Copy only requirements.txt and install
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-RUN pip install poetry==1.5.1
+# Copy the application code
+COPY . .
 
-COPY ./pyproject.toml ./poetry.lock* /tmp/
-
-
- RUN pip install poetry==1.5.1 uvicorn fastapi loguru\
-    && poetry install --no-dev --no-root \
-    && pip freeze > requirements.txt
-
-
-FROM python:3.10
+# Stage 2: create the lightweight runtime image
+FROM python:3.10-slim
 
 WORKDIR /code
 
-COPY --from=requirements-stage /tmp/requirements.txt /code/requirements.txt
+# Copy installed packages from builder
+COPY --from=builder /usr/local/lib/python3.10/site-packages/ /usr/local/lib/python3.10/site-packages/
+COPY --from=builder /usr/local/bin/uvicorn /usr/local/bin/uvicorn
 
-RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
+# Copy application code
+COPY --from=builder /app /code
 
-COPY . /code/
+# Expose default port (override with PORT or WEBSITES_PORT)
+EXPOSE 8080
 
-# Heroku uses PORT, Azure App Services uses WEBSITES_PORT, Fly.io uses 8080 by default
 CMD ["sh", "-c", "uvicorn server.main:app --host 0.0.0.0 --port ${PORT:-${WEBSITES_PORT:-8080}}"]
+
