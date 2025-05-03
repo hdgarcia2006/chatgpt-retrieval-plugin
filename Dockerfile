@@ -8,7 +8,10 @@ RUN pip install poetry==1.5.1
 COPY ./pyproject.toml ./poetry.lock* /tmp/
 
 
-RUN poetry export -f requirements.txt --output requirements.txt --without-hashes
+RUN pip install poetry==1.5.1 \
+    && poetry install --no-dev --no-root \
+    && pip freeze > requirements.txt
+
 
 FROM python:3.10
 
