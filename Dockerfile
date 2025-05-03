@@ -8,7 +8,7 @@ RUN pip install poetry==1.5.1
 COPY ./pyproject.toml ./poetry.lock* /tmp/
 
 
- RUN pip install poetry==1.5.1 uvicorn fastapi \
+ RUN pip install poetry==1.5.1 uvicorn fastapi loguru\
     && poetry install --no-dev --no-root \
     && pip freeze > requirements.txt
 
